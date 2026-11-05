@@ -22,7 +22,8 @@ public class DesarrolladoresRepository {
     }
 
     public ArrayList<DesarrolladorDTO> buscarDesarroladores(String nombre, String pais) {
-        String sql = "SELECT id, nombre, pais FROM desarrolador";
+        String sql = "SELECT id, nombre, pais FROM desarrolador" +
+                "WHERE nombre LIKE ? ORDER BY nombre";
 
         ArrayList<DesarrolladorDTO> listaDesarrollador = new ArrayList<>();
         Connection connection = null;
@@ -30,7 +31,6 @@ public class DesarrolladoresRepository {
             connection = dataSource.getConnection();
             PreparedStatement ps = connection.prepareStatement(sql);
             ps.setString(1, "%" + nombre + "%");
-            ps.setString(1, "%" + pais + "%");
 
             logger.info("Query a ejecutar: {}", ps);
             ResultSet rs = ps.executeQuery();
@@ -39,7 +39,7 @@ public class DesarrolladoresRepository {
             }
             connection.close();
         } catch (SQLException e) {
-            logger.error("Error al buscar alumnos", e);
+            logger.error("Error al buscar desarrolladores", e);
             cerrarConexion(connection);
         }
         return listaDesarrollador;

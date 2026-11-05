@@ -14,13 +14,14 @@ import java.util.ArrayList;
 public class VideojuegosRepository {
     private static final Logger logger = LoggerFactory.getLogger(VideojuegosRepository.class);
     private final DataSource dataSource;
-
     public VideojuegosRepository(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     public ArrayList<VideojuegosDTO> buscarVideojuegos(String titulo, int  anioLanzamiento , int pegi) {
-        String sql = "SELECT v.id, v.titulo, v.anio_lanzamiento , v.pegi , v.id_desarrollador FROM videojuego v JOIN desarrollador d ON v.id_desarrollador = d.id";
+        String sql = "SELECT id, titulo, anio_lanzamiento, pegi, id_desarrollador " +
+                "FROM videojuegos " +
+                "WHERE titulo LIKE ? AND anio_lanzamiento = ? AND pegi = ?";
 
         ArrayList<VideojuegosDTO> listaVideojuegos = new ArrayList<>();
         Connection connection = null;

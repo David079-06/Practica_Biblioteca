@@ -21,25 +21,31 @@ public class CopiasRepository {
     }
 
     public ArrayList<CopiasDTO> buscarCopias(String codigoInventario, String estado, Boolean activo) {
-        String sql = "SELECT id, codigo_inventario, id_videojuego, id_plataforma , activo FROM copias";
+        String sql = "SELECT c.id, c.codigo_inventario, c.id_videojuego, c.id_plataforma, "
+                + "c.estado, c.activa, v.titulo, v.pegi, v.anio_lanzamiento, "
+                + "p.nombre AS plataforma FROM copias c "
+                + "JOIN videojuegos v ON c.id_videojuego = v.id "
+                + "JOIN plataformas p ON c.id_plataforma = p.id "
+                + "WHERE c.activa = 1 AND NOT EXISTS ("
+                + "SELECT 1 FROM prestamos pr WHERE pr.id_copia = c.id "
+                + "AND pr.fecha_devolucion IS NULL) "
+                + "ORDER BY v.titulo, p.nombre, c.codigo_inventario";
 
         ArrayList<CopiasDTO> listaCopias = new ArrayList<>();
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
             PreparedStatement ps = connection.prepareStatement(sql);
-            ps.setString(1, "%" + codigoInventario + "%");
-            ps.setString(1, "%" + estado + "%");
-            ps.setBoolean(4, activo);
-
             logger.info("Query a ejecutar: {}", ps);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 listaCopias.add(mapearCopias(rs));
             }
+            rs.close();
+            ps.close();
             connection.close();
         } catch (SQLException e) {
-            logger.error("Error al buscar alumnos", e);
+            logger.error("Error al buscar copias disponibles", e);
             cerrarConexion(connection);
         }
         return listaCopias;
@@ -51,7 +57,7 @@ public class CopiasRepository {
                 rs.getString("codigo_inventario"),
                 rs.getInt("id_videojuego"),
                 rs.getInt("id_plataforma"),
-                rs.getString("municipio"),
+                rs.getString("estado"),
                 rs.getBoolean("activo")
         );
     }

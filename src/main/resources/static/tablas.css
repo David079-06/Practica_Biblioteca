@@ -1,0 +1,43 @@
+table {
+    border-collapse: collapse;
+    width: 100%;
+    background: #fff;
+    margin-top: 1rem;
+}
+
+th {
+    background: #1e3a8a;
+    color: #fff;
+    text-align: left;
+}
+
+th, td {
+    padding: .5rem .7rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+tr:hover td {
+    background: #eff6ff;
+}
+
+.estado {
+    padding: .15rem .6rem;
+    border-radius: 999px;
+    font-size: .85rem;
+    font-weight: 700;
+}
+
+.estado-EN_PLAZO {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.estado-VENCIDO {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.estado-DEVUELTO {
+    background: #dcfce7;
+    color: #15803d;
+}
