@@ -6,10 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 
 @Repository
@@ -21,41 +19,92 @@ public class PrestamosRepository {
         this.dataSource = dataSource;
     }
 
-    public ArrayList<PrestamosDTO> buscarPrestamos(int id_socio) {
-        String sql = String sql = "SELECT pr.*, "
-                + "CONCAT(s.nombre, ' ', s.apellidos) AS socio, "
-                + "v.titulo AS videojuego, p.nombre AS plataforma, "
-                + "CASE WHEN pr.fecha_devolucion IS NOT NULL THEN 'DEVUELTO' "
-                + "WHEN pr.fecha_limite < CURDATE() THEN 'VENCIDO' "
-                + "ELSE 'EN PLAZO' END AS estado, "
-                + "CASE WHEN pr.fecha_devolucion IS NULL AND pr.fecha_limite < CURDATE() "
-                + "THEN DATEDIFF(CURDATE(), pr.fecha_limite) ELSE 0 END AS dias_retraso "
-                + "FROM prestamos pr "
+    public ArrayList<PrestamosDTO> buscarPrestamos(String nombre, String titulo,LocalDate fechaDesde) {
+        String sql = "SELECT pr.* FROM prestamos pr "
                 + "JOIN socios s ON pr.id_socio = s.id "
                 + "JOIN copias c ON pr.id_copia = c.id "
                 + "JOIN videojuegos v ON c.id_videojuego = v.id "
-                + "JOIN plataformas p ON c.id_plataforma = p.id "
                 + "WHERE CONCAT(s.nombre, ' ', s.apellidos) LIKE ? "
                 + "AND v.titulo LIKE ?";
+        if (fechaDesde != null) {
+            sql += " AND pr.fecha_prestamo >= ?";
+        }
+        sql += " ORDER BY pr.fecha_prestamo DESC";
 
         ArrayList<PrestamosDTO> listaPrestamos = new ArrayList<>();
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
             PreparedStatement ps = connection.prepareStatement(sql);
-            ps.setInt(1, id_socio);
-
+            if (nombre == null) nombre = "";
+            if (titulo == null) titulo = "";
+            ps.setString(1, "%" + nombre + "%");
+            ps.setString(2, "%" + titulo + "%");
+            if (fechaDesde != null) {
+                ps.setDate(3, Date.valueOf(fechaDesde));
+            }
             logger.info("Query a ejecutar: {}", ps);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 listaPrestamos.add(mapearPrestamos(rs));
             }
-            connection.close();
+            rs.close();
+            ps.close();
         } catch (SQLException e) {
-            logger.error("Error al buscar prestamos", e);
+            logger.error("Error al buscar préstamos", e);
+        } finally {
             cerrarConexion(connection);
         }
         return listaPrestamos;
+    }
+
+    public ArrayList<PrestamosDTO> buscarPrestamosAbiertos(String nombre) {
+        String sql = "SELECT pr.* FROM prestamos pr "
+                + "JOIN socios s ON pr.id_socio = s.id "
+                + "WHERE pr.fecha_devolucion IS NULL "
+                + "AND CONCAT(s.nombre, ' ', s.apellidos) LIKE ? "
+                + "ORDER BY pr.fecha_prestamo DESC";
+        ArrayList<PrestamosDTO> listaPrestamos = new ArrayList<>();
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            if (nombre == null) nombre = "";
+            ps.setString(1, "%" + nombre + "%");
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                listaPrestamos.add(mapearPrestamos(rs));
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            logger.error("Error al buscar préstamos abiertos", e);
+        } finally {
+            cerrarConexion(connection);
+        }
+        return listaPrestamos;
+    }
+
+    public PrestamosDTO buscarPrestamoPorId(int idPrestamo) {
+        String sql = "SELECT * FROM prestamos WHERE id = ?";
+        PrestamosDTO prestamo = null;
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, idPrestamo);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                prestamo = mapearPrestamos(rs);
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            logger.error("Error al buscar préstamo por ID", e);
+        } finally {
+            cerrarConexion(connection);
+        }
+        return prestamo;
     }
 
     private PrestamosDTO mapearPrestamos(ResultSet rs) throws SQLException {

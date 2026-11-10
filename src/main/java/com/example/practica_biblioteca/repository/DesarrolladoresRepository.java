@@ -25,32 +25,55 @@ public class DesarrolladoresRepository {
         String sql = "SELECT id, nombre, pais FROM desarrolador" +
                 "WHERE nombre LIKE ? ORDER BY nombre";
 
-        ArrayList<DesarrolladorDTO> listaDesarrollador = new ArrayList<>();
+        ArrayList<DesarrolladorDTO> listaDesarrolladoras = new ArrayList<>();
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
             PreparedStatement ps = connection.prepareStatement(sql);
+            if (nombre == null) nombre = "";
             ps.setString(1, "%" + nombre + "%");
-
             logger.info("Query a ejecutar: {}", ps);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                listaDesarrollador.add(mapearDesarrolladores(rs));
+                listaDesarrolladoras.add(mapearDesarrolladora(rs));
             }
-            connection.close();
+            rs.close();
+            ps.close();
         } catch (SQLException e) {
-            logger.error("Error al buscar desarrolladores", e);
+            logger.error("Error al buscar desarrolladoras", e);
+        } finally {
             cerrarConexion(connection);
         }
-        return listaDesarrollador;
+        return listaDesarrolladoras;
     }
 
-    private DesarrolladorDTO mapearDesarrolladores(ResultSet rs) throws SQLException {
+    private DesarrolladorDTO mapearDesarrolladora(ResultSet rs) throws SQLException {
         return new DesarrolladorDTO(
                 rs.getInt("id"),
                 rs.getString("nombre"),
                 rs.getString("pais")
         );
+    }
+    public DesarrolladorDTO buscarDesarrolladoraPorId(int idDesarrolladora) {
+        String sql = "SELECT id, nombre, pais FROM desarrolladoras WHERE id = ?";
+        DesarrolladorDTO desarrolladora = null;
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, idDesarrolladora);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                desarrolladora = mapearDesarrolladora(rs);
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            logger.error("Error al buscar desarrolladora por ID",idDesarrolladora, e);
+        } finally {
+            cerrarConexion(connection);
+        }
+        return desarrolladora;
     }
 
     private void cerrarConexion(Connection connection) {
