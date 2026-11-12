@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio - GameVault</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <link rel="stylesheet" th:href="@{/css/formularios.css}">
+    <link rel="stylesheet" th:href="@{/css/tablas.css}">
+</head>
+<body>
+<div th:replace="~{fragmentos/menu :: menu}"></div>
+<main>
+    <h2>Panel de inicio</h2>
+    <div class="tarjetas">
+        <div class="tarjeta">Videojuegos<strong th:text="${videojuegos}">0</strong></div>
+        <div class="tarjeta">Socios activos<strong th:text="${sociosActivos}">0</strong></div>
+        <div class="tarjeta">Préstamos abiertos<strong th:text="${prestamosAbiertos}">0</strong></div>
+        <div class="tarjeta vencidos">Préstamos vencidos<strong th:text="${prestamosVencidos}">0</strong></div>
+    </div>
+    <div class="panel" style="margin-top:22px">
+        <h2>Accesos directos</h2>
+        <div class="acciones">
+            <a class="boton" th:href="@{/videojuegos}">Ver videojuegos</a>
+            <a class="boton" th:href="@{/socios}">Ver socios</a>
+            <a class="boton" th:href="@{/prestamos}">Ver préstamos</a>
+            <a class="boton" th:href="@{/prestamos/registrar}">Nuevo préstamo</a>
+        </div>
+    </div>
+</main>
+</body></html>

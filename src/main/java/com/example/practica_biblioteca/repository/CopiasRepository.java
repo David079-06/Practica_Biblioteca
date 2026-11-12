@@ -1,6 +1,7 @@
 package com.example.practica_biblioteca.repository;
 
 import com.example.practica_biblioteca.DTO.CopiasDTO;
+import com.example.practica_biblioteca.DTO.CopiaDisponibleDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -52,14 +53,14 @@ public class CopiasRepository {
         return listaCopias;
     }
 
-    private CopiasDTO mapearCopias(ResultSet rs) throws SQLException {
+    private CopiasDTO mapearCopia(ResultSet rs) throws SQLException {
         return new CopiasDTO(
                 rs.getInt("id"),
                 rs.getString("codigo_inventario"),
                 rs.getInt("id_videojuego"),
                 rs.getInt("id_plataforma"),
                 rs.getString("estado"),
-                rs.getBoolean("activo")
+                rs.getBoolean("activa")
         );
     }
     public boolean estaDisponible(int idCopia) {
@@ -104,12 +105,13 @@ public class CopiasRepository {
         }
         return copia;
     }
+
     private void cerrarConexion(Connection connection) {
         if (connection != null) {
             try {
                 connection.close();
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
+            } catch (SQLException e) {
+                logger.error("Error al cerrar la conexión", e);
             }
         }
     }

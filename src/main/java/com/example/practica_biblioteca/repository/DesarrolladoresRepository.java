@@ -46,41 +46,12 @@ public class DesarrolladoresRepository {
         return listaDesarrolladoras;
     }
 
-    private DesarrolladorDTO mapearDesarrolladora(ResultSet rs) throws SQLException {
-        return new DesarrolladorDTO(
-                rs.getInt("id"),
-                rs.getString("nombre"),
-                rs.getString("pais")
-        );
-    }
-    public DesarrolladorDTO buscarDesarrolladoraPorId(int idDesarrolladora) {
-        String sql = "SELECT id, nombre, pais FROM desarrolladoras WHERE id = ?";
-        DesarrolladorDTO desarrolladora = null;
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
-            PreparedStatement ps = connection.prepareStatement(sql);
-            ps.setInt(1, idDesarrolladora);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                desarrolladora = mapearDesarrolladora(rs);
-            }
-            rs.close();
-            ps.close();
-        } catch (SQLException e) {
-            logger.error("Error al buscar desarrolladora por ID",idDesarrolladora, e);
-        } finally {
-            cerrarConexion(connection);
-        }
-        return desarrolladora;
-    }
-
     private void cerrarConexion(Connection connection) {
         if (connection != null) {
             try {
                 connection.close();
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
+            } catch (SQLException e) {
+                logger.error("Error al cerrar la conexión", e);
             }
         }
     }

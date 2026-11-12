@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Videojuegos</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <link rel="stylesheet" th:href="@{/css/formularios.css}">
+    <link rel="stylesheet" th:href="@{/css/tablas.css}"></head>
+<body>
+<div th:replace="~{fragmentos/menu :: menu}"></div>
+<main>
+    <h2>Listado de videojuegos</h2>
+    <div th:replace="~{fragmentos/mensajes :: mensajes}"></div>
+    <div class="panel">
+        <form method="get" th:action="@{/videojuegos}" class="form-grid">
+            <div><label for="titulo">Título</label><input id="titulo" name="titulo" th:value="${titulo}"></div>
+            <div><label for="idDesarrolladora">Desarrolladora</label>
+                <select id="idDesarrolladora" name="idDesarrolladora">
+                    <option value="">Todas</option>
+                    <option th:each="dev : ${listaDesarrolladoras}" th:value="${dev.id}"
+                            th:text="${dev.nombre}" th:selected="${idDesarrolladora != null and idDesarrolladora == dev.id}"></option>
+                </select>
+            </div>
+            <div><label for="anioDesde">Año desde</label><input id="anioDesde" name="anioDesde" type="number" min="1970" th:value="${anioDesde}"></div>
+            <div><label for="pegiMaximo">PEGI máximo</label>
+                <select id="pegiMaximo" name="pegiMaximo">
+                    <option value="">Todos</option>
+                    <option value="3" th:selected="${pegiMaximo == 3}">3</option>
+                    <option value="7" th:selected="${pegiMaximo == 7}">7</option>
+                    <option value="12" th:selected="${pegiMaximo == 12}">12</option>
+                    <option value="16" th:selected="${pegiMaximo == 16}">16</option>
+                    <option value="18" th:selected="${pegiMaximo == 18}">18</option>
+                </select>
+            </div>
+            <div class="check"><input id="soloDisponibles" name="soloDisponibles" type="checkbox" value="true" th:checked="${soloDisponibles}"><label for="soloDisponibles">Solo con copias disponibles</label></div>
+            <div><button type="submit">Buscar</button> <a class="boton boton-secundario" th:href="@{/videojuegos}">Limpiar</a></div>
+        </form>
+    </div>
+    <div class="acciones"><a class="boton" th:href="@{/videojuegos/insertar}">Insertar videojuego</a></div>
+    <div class="panel">
+        <p class="vacio" th:if="${#lists.isEmpty(listaVideojuegos)}">No se han encontrado videojuegos.</p>
+        <table class="tabla" th:if="${!#lists.isEmpty(listaVideojuegos)}">
+            <thead><tr><th>ID</th><th>Título</th><th>Desarrolladora</th><th>Año</th><th>PEGI</th><th>Copias</th><th>Disponibles</th></tr></thead>
+            <tbody>
+            <tr th:each="fila : ${listaVideojuegos}">
+                <td th:text="${fila.videojuego.id}"></td><td th:text="${fila.videojuego.titulo}"></td>
+                <td th:text="${fila.desarrolladora}"></td><td th:text="${fila.videojuego.anioLanzamiento}"></td>
+                <td th:text="${fila.videojuego.pegi}"></td><td th:text="${fila.copiasTotales}"></td><td th:text="${fila.copiasDisponibles}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body></html>

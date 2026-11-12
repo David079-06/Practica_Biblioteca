@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devolver préstamos</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <link rel="stylesheet" th:href="@{/css/formularios.css}">
+    <link rel="stylesheet" th:href="@{/css/tablas.css}"></head>
+<body><div th:replace="~{fragmentos/menu :: menu}"></div>
+<main><h2>Devolver préstamos abiertos</h2><div th:replace="~{fragmentos/mensajes :: mensajes}"></div>
+    <div class="panel"><form method="get" th:action="@{/prestamos/devolver}" class="form-grid">
+        <div><label for="nombre">Buscar por socio</label><input id="nombre" name="nombre" th:value="${nombre}"></div>
+        <div><button type="submit">Buscar</button> <a class="boton boton-secundario" th:href="@{/prestamos/devolver}">Limpiar</a></div>
+    </form></div>
+    <div class="panel">
+        <p class="vacio" th:if="${#lists.isEmpty(listaPrestamos)}">No hay préstamos abiertos.</p>
+        <table class="tabla" th:if="${!#lists.isEmpty(listaPrestamos)}">
+            <thead><tr><th>Socio</th><th>Videojuego</th><th>Plataforma</th><th>Copia</th><th>Fecha límite</th><th>Estado</th><th>Devolución</th></tr></thead>
+            <tbody><tr th:each="fila : ${listaPrestamos}">
+                <td th:text="${fila.socio}"></td><td th:text="${fila.videojuego}"></td><td th:text="${fila.plataforma}"></td>
+                <td th:text="${fila.codigoInventario}"></td><td th:text="${fila.prestamo.fechaLimite}"></td>
+                <td><span class="estado" th:classappend="${fila.estado == 'VENCIDO' ? ' estado-VENCIDO' : ' estado-EN_PLAZO'}"
+                          th:text="${fila.estado}"></span></td>
+                <td><form method="post" th:action="@{/prestamos/devolver/{id}(id=${fila.prestamo.id})}">
+                    <label class="check"><input type="checkbox" name="copiaDanada" value="true"> Copia dañada</label>
+                    <input type="hidden" name="nombre" th:value="${nombre}">
+                    <button type="submit">Devolver</button>
+                </form></td>
+            </tr></tbody>
+        </table>
+    </div>
+</main></body></html>
