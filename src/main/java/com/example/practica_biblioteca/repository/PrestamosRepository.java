@@ -1,6 +1,7 @@
 package com.example.practica_biblioteca.repository;
 
 import com.example.practica_biblioteca.DTO.PrestamosDTO;
+import com.example.practica_biblioteca.DTO.PrestamoListadoDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -234,29 +235,7 @@ public class PrestamosRepository {
         return total;
     }
 
-    public PrestamosDTO buscarPrestamoPorId(int idPrestamo) {
-        String sql = "SELECT * FROM prestamos WHERE id = ?";
-        PrestamosDTO prestamo = null;
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
-            PreparedStatement ps = connection.prepareStatement(sql);
-            ps.setInt(1, idPrestamo);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                prestamo = mapearPrestamos(rs);
-            }
-            rs.close();
-            ps.close();
-        } catch (SQLException e) {
-            logger.error("Error al buscar préstamo por ID", e);
-        } finally {
-            cerrarConexion(connection);
-        }
-        return prestamo;
-    }
-    
-     public boolean devolverPrestamo(int idPrestamo, int idCopia, double multa, boolean copiaDanada) {
+    public boolean devolverPrestamo(int idPrestamo, int idCopia, double multa, boolean copiaDanada) {
         String sqlPrestamo = "UPDATE prestamos SET fecha_devolucion = CURDATE(), multa = ? "
                 + "WHERE id = ? AND fecha_devolucion IS NULL";
         String sqlCopia = "UPDATE copias SET estado = 'DANADO', activa = 0 WHERE id = ?";

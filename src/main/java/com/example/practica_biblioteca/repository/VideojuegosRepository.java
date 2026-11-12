@@ -1,8 +1,10 @@
 package com.example.practica_biblioteca.repository;
 
 import com.example.practica_biblioteca.DTO.VideojuegosDTO;
+import com.example.practica_biblioteca.DTO.VideojuegoListadoDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -11,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+@Repository
 public class VideojuegosRepository {
     private static final Logger logger = LoggerFactory.getLogger(VideojuegosRepository.class);
     private final DataSource dataSource;
@@ -82,13 +85,13 @@ public class VideojuegosRepository {
         return listaVideojuegos;
     }
 
-    private VideojuegosDTO mapearVideojuegos(ResultSet rs) throws SQLException {
+    private VideojuegosDTO mapearVideojuego(ResultSet rs) throws SQLException {
         return new VideojuegosDTO(
                 rs.getInt("id"),
                 rs.getString("titulo"),
                 rs.getInt("anio_lanzamiento"),
                 rs.getInt("pegi"),
-                rs.getInt("id_desarrollador")
+                rs.getInt("id_desarrolladora")
         );
     }
 

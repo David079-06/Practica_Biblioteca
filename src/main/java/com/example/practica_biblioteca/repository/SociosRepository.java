@@ -4,6 +4,7 @@ import com.example.practica_biblioteca.DTO.DesarrolladorDTO;
 import com.example.practica_biblioteca.DTO.SociosDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -12,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+@Repository
 public class SociosRepository {
     private static final Logger logger = LoggerFactory.getLogger(SociosRepository.class);
     private final DataSource dataSource;
@@ -66,7 +68,7 @@ public class SociosRepository {
         return listaSocios;
     }
 
-    private SociosDTO mapearSocios(ResultSet rs) throws SQLException {
+    private SociosDTO mapearSocio(ResultSet rs) throws SQLException {
         return new SociosDTO(
                 rs.getInt("id"),
                 rs.getString("nombre"),
