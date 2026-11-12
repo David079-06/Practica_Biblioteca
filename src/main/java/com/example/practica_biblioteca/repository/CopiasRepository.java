@@ -20,26 +20,27 @@ public class CopiasRepository {
         this.dataSource = dataSource;
     }
 
-    public ArrayList<CopiasDTO> buscarCopias(String codigoInventario, String estado, Boolean activo) {
-        String sql = "SELECT c.id, c.codigo_inventario, c.id_videojuego, c.id_plataforma, "
-                + "c.estado, c.activa, v.titulo, v.pegi, v.anio_lanzamiento, "
-                + "p.nombre AS plataforma FROM copias c "
+    public ArrayList<CopiaDisponibleDTO> buscarCopiasDisponibles() {
+        String sql = "SELECT c.id, c.codigo_inventario, v.titulo, p.nombre AS plataforma "
+                + "FROM copias c "
                 + "JOIN videojuegos v ON c.id_videojuego = v.id "
                 + "JOIN plataformas p ON c.id_plataforma = p.id "
-                + "WHERE c.activa = 1 AND NOT EXISTS ("
-                + "SELECT 1 FROM prestamos pr WHERE pr.id_copia = c.id "
-                + "AND pr.fecha_devolucion IS NULL) "
+                + "WHERE c.activa = 1 AND c.id NOT IN "
+                + "(SELECT id_copia FROM prestamos WHERE fecha_devolucion IS NULL) "
                 + "ORDER BY v.titulo, p.nombre, c.codigo_inventario";
-
-        ArrayList<CopiasDTO> listaCopias = new ArrayList<>();
+        ArrayList<CopiaDisponibleDTO> listaCopias = new ArrayList<>();
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
             PreparedStatement ps = connection.prepareStatement(sql);
-            logger.info("Query a ejecutar: {}", ps);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                listaCopias.add(mapearCopias(rs));
+                listaCopias.add(new CopiaDisponibleDTO(
+                        rs.getInt("id"),
+                        rs.getString("codigo_inventario"),
+                        rs.getString("titulo"),
+                        rs.getString("plataforma")
+                ));
             }
             rs.close();
             ps.close();
@@ -60,6 +61,48 @@ public class CopiasRepository {
                 rs.getString("estado"),
                 rs.getBoolean("activo")
         );
+    }
+    public boolean estaDisponible(int idCopia) {
+        String sql = "SELECT id FROM copias WHERE id = ? AND activa = 1 AND id NOT IN "
+                + "(SELECT id_copia FROM prestamos WHERE fecha_devolucion IS NULL)";
+        boolean disponible = false;
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, idCopia);
+            ResultSet rs = ps.executeQuery();
+            disponible = rs.next();
+            rs.close();
+            ps.close();
+            connection.close();
+        } catch (SQLException e) {
+            logger.error("Error al comprobar la disponibilidad de la copia", e);
+            cerrarConexion(connection);
+        }
+        return disponible;
+    }
+    public CopiasDTO buscarCopiaPorId(int idCopia) {
+        String sql = "SELECT id, codigo_inventario, id_videojuego, id_plataforma, estado, activa "
+                + "FROM copias WHERE id = ?";
+        CopiasDTO copia = null;
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, idCopia);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                copia = mapearCopia(rs);
+            }
+            rs.close();
+            ps.close();
+            connection.close();
+        } catch (SQLException e) {
+            logger.error("Error al buscar copia", e);
+            cerrarConexion(connection);
+        }
+        return copia;
     }
     private void cerrarConexion(Connection connection) {
         if (connection != null) {

@@ -21,27 +21,26 @@ public class DesarrolladoresRepository {
         this.dataSource = dataSource;
     }
 
-    public ArrayList<DesarrolladorDTO> buscarDesarroladores(String nombre, String pais) {
-        String sql = "SELECT id, nombre, pais FROM desarrolador" +
-                "WHERE nombre LIKE ? ORDER BY nombre";
-
+    public ArrayList<DesarrolladorDTO> buscarDesarrolladoras() {
+        String sql = "SELECT id, nombre, pais FROM desarrolladoras ORDER BY nombre";
         ArrayList<DesarrolladorDTO> listaDesarrolladoras = new ArrayList<>();
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
             PreparedStatement ps = connection.prepareStatement(sql);
-            if (nombre == null) nombre = "";
-            ps.setString(1, "%" + nombre + "%");
-            logger.info("Query a ejecutar: {}", ps);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                listaDesarrolladoras.add(mapearDesarrolladora(rs));
+                listaDesarrolladoras.add(new DesarrolladorDTO(
+                        rs.getInt("id"),
+                        rs.getString("nombre"),
+                        rs.getString("pais")
+                ));
             }
             rs.close();
             ps.close();
+            connection.close();
         } catch (SQLException e) {
             logger.error("Error al buscar desarrolladoras", e);
-        } finally {
             cerrarConexion(connection);
         }
         return listaDesarrolladoras;
