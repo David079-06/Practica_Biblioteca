@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar préstamo</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <link rel="stylesheet" th:href="@{/css/formularios.css}">
+    <link rel="stylesheet" th:href="@{/css/tablas.css}"></head>
+<body><div th:replace="~{fragmentos/menu :: menu}"></div>
+<main><h2>Registrar préstamo</h2><div th:replace="~{fragmentos/mensajes :: mensajes}"></div>
+    <div class="panel"><form method="post" th:action="@{/prestamos/registrar}" class="form-grid">
+        <div><label for="idSocio">Socio activo</label><select id="idSocio" name="idSocio" required>
+            <option value="">Selecciona un socio</option>
+            <option th:each="socio : ${listaSocios}" th:value="${socio.id}" th:text="${socio.nombre + ' ' + socio.apellidos}"></option>
+        </select></div>
+        <div><label for="idCopia">Copia disponible</label><select id="idCopia" name="idCopia" required>
+            <option value="">Selecciona una copia</option>
+            <option th:each="copia : ${listaCopias}" th:value="${copia.id}" th:text="${copia.descripcion}"></option>
+        </select></div>
+        <div><button type="submit">Registrar</button> <a class="boton boton-secundario" th:href="@{/prestamos}">Volver</a></div>
+    </form></div>
+</main></body></html>

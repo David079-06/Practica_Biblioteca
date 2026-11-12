@@ -1,0 +1,4 @@
+<div th:fragment="mensajes">
+    <div class="ok" th:if="${mensaje}" th:text="${mensaje}"></div>
+    <div class="error" th:if="${error}" th:text="${error}"></div>
+</div>
