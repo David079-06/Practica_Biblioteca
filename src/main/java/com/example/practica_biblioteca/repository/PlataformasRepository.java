@@ -13,28 +13,25 @@ public class PlataformasRepository {
     private static final Logger logger = LoggerFactory.getLogger(PlataformasRepository.class);
     private final DataSource dataSource;
 
-    public PlataformasRepository(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    public ArrayList<PlataformasDTO> buscarPlataforma(String nombre) {
-        String sql = "SELECT id , nombre FROM plataformas WHERE nombre LIKE ? ORDER BY nombre";
-
+    public ArrayList<PlataformasDTO> buscarPlataformas() {
+        String sql = "SELECT id, nombre FROM plataformas ORDER BY nombre";
         ArrayList<PlataformasDTO> listaPlataformas = new ArrayList<>();
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
             PreparedStatement ps = connection.prepareStatement(sql);
-            ps.setString(1, "%" + nombre + "%");
-
-            logger.info("Query a ejecutar: {}", ps);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                listaPlataformas.add(mapearPlataformas(rs));
+                listaPlataformas.add(new PlataformasDTO(
+                        rs.getString("nombre"),
+                        rs.getInt("id")
+                ));
             }
+            rs.close();
+            ps.close();
             connection.close();
         } catch (SQLException e) {
-            logger.error("Error al buscar alumnos", e);
+            logger.error("Error al buscar plataformas", e);
             cerrarConexion(connection);
         }
         return listaPlataformas;

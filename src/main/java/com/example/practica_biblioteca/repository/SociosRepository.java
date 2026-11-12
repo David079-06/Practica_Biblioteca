@@ -20,36 +20,43 @@ public class SociosRepository {
         this.dataSource = dataSource;
     }
 
-    public ArrayList<SociosDTO> buscarSocios(String nombreApellidos, String email, Boolean activo) {
-        String sql = "SELECT * FROM socios "
-                + "WHERE CONCAT(nombre, ' ', apellidos) LIKE ? AND email LIKE ?";
-        if (activo != null) {
-            sql += " AND activo = ?";
+    public ArrayList<SociosDTO> buscarSocios(String nombre, String email, Boolean activo) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT id, nombre, apellidos, email, fecha_nacimiento, fecha_alta, activo "
+                        + "FROM socios WHERE 1 = 1");
+        ArrayList<Object> parametros = new ArrayList<>();
+
+        if (nombre != null && !nombre.isBlank()) {
+            sql.append(" AND CONCAT(nombre, ' ', apellidos) LIKE ?");
+            parametros.add("%" + nombre + "%");
         }
-        sql += " ORDER BY nombre, apellidos";
+        if (email != null && !email.isBlank()) {
+            sql.append(" AND email LIKE ?");
+            parametros.add("%" + email + "%");
+        }
+        if (activo != null) {
+            sql.append(" AND activo = ?");
+            parametros.add(activo);
+        }
+        sql.append(" ORDER BY apellidos, nombre");
 
         ArrayList<SociosDTO> listaSocios = new ArrayList<>();
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
-            PreparedStatement ps = connection.prepareStatement(sql);
-            if (nombreApellidos == null) nombreApellidos = "";
-            if (email == null) email = "";
-            ps.setString(1, "%" + nombreApellidos + "%");
-            ps.setString(2, "%" + email + "%");
-            if (activo != null) {
-                ps.setBoolean(3, activo);
+            PreparedStatement ps = connection.prepareStatement(sql.toString());
+            for (int i = 0; i < parametros.size(); i++) {
+                ps.setObject(i + 1, parametros.get(i));
             }
-            logger.info("Query a ejecutar: {}", ps);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                listaSocios.add(mapearSocios(rs));
+                listaSocios.add(mapearSocio(rs));
             }
             rs.close();
             ps.close();
+            connection.close();
         } catch (SQLException e) {
             logger.error("Error al buscar socios", e);
-        } finally {
             cerrarConexion(connection);
         }
         return listaSocios;
@@ -65,7 +72,47 @@ public class SociosRepository {
                 rs.getBoolean("activo")
         );
     }
-
+    public int insertarSocio(SociosDTO socio) {
+        String sql = "INSERT INTO socios (nombre, apellidos, email, fecha_nacimiento, fecha_alta, activo) "
+                + "VALUES (?, ?, ?, ?, CURDATE(), 1)";
+        int filasAfectadas = 0;
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setString(1, socio.getNombre());
+            ps.setString(2, socio.getApellidos());
+            ps.setString(3, socio.getEmail());
+            ps.setDate(4, Date.valueOf(socio.getFechaNacimiento()));
+            filasAfectadas = ps.executeUpdate();
+            ps.close();
+            connection.close();
+        } catch (SQLException e) {
+            logger.error("Error al insertar socio", e);
+            cerrarConexion(connection);
+        }
+        return filasAfectadas;
+    }
+    public int contarSociosActivos() {
+        String sql = "SELECT COUNT(*) AS total FROM socios WHERE activo = 1";
+        int total = 0;
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                total = rs.getInt("total");
+            }
+            rs.close();
+            ps.close();
+            connection.close();
+        } catch (SQLException e) {
+            logger.error("Error al contar socios activos", e);
+            cerrarConexion(connection);
+        }
+        return total;
+    }
     private void cerrarConexion(Connection connection) {
         if (connection != null) {
             try {
