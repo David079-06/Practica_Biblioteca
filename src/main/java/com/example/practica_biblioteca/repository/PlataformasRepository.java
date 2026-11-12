@@ -37,20 +37,12 @@ public class PlataformasRepository {
         return listaPlataformas;
     }
 
-    private PlataformasDTO mapearPlataformas(ResultSet rs) throws SQLException {
-        return new PlataformasDTO(
-                rs.getString("nombre"),
-                rs.getInt("id")
-
-                );
-    }
-
     private void cerrarConexion(Connection connection) {
         if (connection != null) {
             try {
                 connection.close();
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
+            } catch (SQLException e) {
+                logger.error("Error al cerrar la conexión", e);
             }
         }
     }

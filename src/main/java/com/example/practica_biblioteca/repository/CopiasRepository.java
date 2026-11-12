@@ -104,12 +104,13 @@ public class CopiasRepository {
         }
         return copia;
     }
+
     private void cerrarConexion(Connection connection) {
         if (connection != null) {
             try {
                 connection.close();
-            } catch (SQLException ex) {
-                throw new RuntimeException(ex);
+            } catch (SQLException e) {
+                logger.error("Error al cerrar la conexión", e);
             }
         }
     }
