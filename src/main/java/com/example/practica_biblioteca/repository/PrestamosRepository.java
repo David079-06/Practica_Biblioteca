@@ -84,6 +84,26 @@ public class PrestamosRepository {
         }
         return listaPrestamos;
     }
+    private int contarPrestamosDeSocio(String sql, int idSocio) {
+        int total = 0;
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, idSocio);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                total = rs.getInt("total");
+            }
+            rs.close();
+            ps.close();
+            connection.close();
+        } catch (SQLException e) {
+            logger.error("Error al contar préstamos del socio", e);
+            cerrarConexion(connection);
+        }
+        return total;
+    }
 
     public PrestamosDTO buscarPrestamoPorId(int idPrestamo) {
         String sql = "SELECT * FROM prestamos WHERE id = ?";
@@ -105,6 +125,61 @@ public class PrestamosRepository {
             cerrarConexion(connection);
         }
         return prestamo;
+    }
+    
+    public boolean devolverPrestamo(int idPrestamo, int idCopia, double multa, boolean copiaDanada) {
+        String sqlPrestamo = "UPDATE prestamos SET fecha_devolucion = CURDATE(), multa = ? "
+                + "WHERE id = ? AND fecha_devolucion IS NULL";
+        String sqlCopia = "UPDATE copias SET estado = 'DANADO', activa = 0 WHERE id = ?";
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            connection.setAutoCommit(false);
+
+            PreparedStatement ps = connection.prepareStatement(sqlPrestamo);
+            ps.setDouble(1, multa);
+            ps.setInt(2, idPrestamo);
+            int filasPrestamo = ps.executeUpdate();
+            ps.close();
+
+            if (filasPrestamo != 1) {
+                connection.rollback();
+                return false;
+            }
+
+            if (copiaDanada) {
+                PreparedStatement psCopia = connection.prepareStatement(sqlCopia);
+                psCopia.setInt(1, idCopia);
+                int filasCopia = psCopia.executeUpdate();
+                psCopia.close();
+                if (filasCopia != 1) {
+                    connection.rollback();
+                    return false;
+                }
+            }
+
+            connection.commit();
+            return true;
+        } catch (SQLException e) {
+            logger.error("Error al devolver préstamo", e);
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException errorRollback) {
+                    logger.error("Error al deshacer los cambios", errorRollback);
+                }
+            }
+            return false;
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.setAutoCommit(true);
+                } catch (SQLException e) {
+                    logger.error("Error al restaurar la conexión", e);
+                }
+                cerrarConexion(connection);
+            }
+        }
     }
 
     private PrestamosDTO mapearPrestamos(ResultSet rs) throws SQLException {

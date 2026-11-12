@@ -20,33 +20,37 @@ public class SociosRepository {
         this.dataSource = dataSource;
     }
 
-    public ArrayList<SociosDTO> buscarSocios(String nombre, String email, Boolean activo) {
-        StringBuilder sql = new StringBuilder(
-                "SELECT id, nombre, apellidos, email, fecha_nacimiento, fecha_alta, activo "
-                        + "FROM socios WHERE 1 = 1");
-        ArrayList<Object> parametros = new ArrayList<>();
+   public ArrayList<SociosDTO> buscarSocios(String nombre, String email, Boolean activo) {
+        String sql = "SELECT id, nombre, apellidos, email, fecha_nacimiento, fecha_alta, activo "
+                + "FROM socios WHERE 1 = 1";
 
-        if (nombre != null && !nombre.isBlank()) {
-            sql.append(" AND CONCAT(nombre, ' ', apellidos) LIKE ?");
-            parametros.add("%" + nombre + "%");
+        if (nombre != null && !nombre.trim().isEmpty()) {
+            sql = sql + " AND CONCAT(nombre, ' ', apellidos) LIKE ?";
         }
-        if (email != null && !email.isBlank()) {
-            sql.append(" AND email LIKE ?");
-            parametros.add("%" + email + "%");
+        if (email != null && !email.trim().isEmpty()) {
+            sql = sql + " AND email LIKE ?";
         }
         if (activo != null) {
-            sql.append(" AND activo = ?");
-            parametros.add(activo);
+            sql = sql + " AND activo = ?";
         }
-        sql.append(" ORDER BY apellidos, nombre");
+        sql = sql + " ORDER BY apellidos, nombre";
 
         ArrayList<SociosDTO> listaSocios = new ArrayList<>();
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
-            PreparedStatement ps = connection.prepareStatement(sql.toString());
-            for (int i = 0; i < parametros.size(); i++) {
-                ps.setObject(i + 1, parametros.get(i));
+            PreparedStatement ps = connection.prepareStatement(sql);
+            int numeroParametro = 1;
+            if (nombre != null && !nombre.trim().isEmpty()) {
+                ps.setString(numeroParametro, "%" + nombre + "%");
+                numeroParametro++;
+            }
+            if (email != null && !email.trim().isEmpty()) {
+                ps.setString(numeroParametro, "%" + email + "%");
+                numeroParametro++;
+            }
+            if (activo != null) {
+                ps.setBoolean(numeroParametro, activo);
             }
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -61,6 +65,7 @@ public class SociosRepository {
         }
         return listaSocios;
     }
+
     private SociosDTO mapearSocios(ResultSet rs) throws SQLException {
         return new SociosDTO(
                 rs.getInt("id"),
@@ -71,6 +76,28 @@ public class SociosRepository {
                 rs.getDate("fecha_alta").toLocalDate(),
                 rs.getBoolean("activo")
         );
+    }
+    public SociosDTO buscarSocioPorId(int idSocio) {
+        String sql = "SELECT id, nombre, apellidos, email, fecha_nacimiento, fecha_alta, activo "
+                + "FROM socios WHERE id = ?";
+        SociosDTO socio = null;
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, idSocio);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                socio = mapearSocio(rs);
+            }
+            rs.close();
+            ps.close();
+            connection.close();
+        } catch (SQLException e) {
+            logger.error("Error al buscar socio por ID", e);
+            cerrarConexion(connection);
+        }
+        return socio;
     }
     public int insertarSocio(SociosDTO socio) {
         String sql = "INSERT INTO socios (nombre, apellidos, email, fecha_nacimiento, fecha_alta, activo) "
@@ -113,6 +140,26 @@ public class SociosRepository {
         }
         return total;
     }
+    public boolean existeEmail(String email) {
+        String sql = "SELECT id FROM socios WHERE email = ?";
+        boolean existe = false;
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setString(1, email);
+            ResultSet rs = ps.executeQuery();
+            existe = rs.next();
+            rs.close();
+            ps.close();
+            connection.close();
+        } catch (SQLException e) {
+            logger.error("Error al comprobar email", e);
+            cerrarConexion(connection);
+        }
+        return existe;
+    }
+
     private void cerrarConexion(Connection connection) {
         if (connection != null) {
             try {

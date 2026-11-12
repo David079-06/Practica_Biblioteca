@@ -18,28 +18,65 @@ public class VideojuegosRepository {
         this.dataSource = dataSource;
     }
 
-    public ArrayList<VideojuegosDTO> buscarVideojuegos(String titulo, int  anioLanzamiento , int pegi) {
-        String sql = "SELECT id, titulo, anio_lanzamiento, pegi, id_desarrollador " +
-                "FROM videojuegos " +
-                "WHERE titulo LIKE ? AND anio_lanzamiento = ? AND pegi = ?";
+    public ArrayList<VideojuegoListadoDTO> buscarVideojuegos(String titulo, Integer idDesarrolladora,
+                                                              Integer anioDesde, Integer pegiMaximo,
+                                                              boolean soloDisponibles) {
+        String sql = "SELECT id, titulo, anio_lanzamiento, pegi, id_desarrolladora, desarrolladora, "
+                + "copias_totales, copias_disponibles "
+                + "FROM v_videojuegos_detalle WHERE 1 = 1";
 
-        ArrayList<VideojuegosDTO> listaVideojuegos = new ArrayList<>();
+        if (titulo != null && !titulo.trim().isEmpty()) {
+            sql = sql + " AND titulo LIKE ?";
+        }
+        if (idDesarrolladora != null) {
+            sql = sql + " AND id_desarrolladora = ?";
+        }
+        if (anioDesde != null) {
+            sql = sql + " AND anio_lanzamiento >= ?";
+        }
+        if (pegiMaximo != null) {
+            sql = sql + " AND pegi <= ?";
+        }
+        if (soloDisponibles) {
+            sql = sql + " AND copias_disponibles > 0";
+        }
+        sql = sql + " ORDER BY titulo";
+
+        ArrayList<VideojuegoListadoDTO> listaVideojuegos = new ArrayList<>();
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
             PreparedStatement ps = connection.prepareStatement(sql);
-            ps.setString(1, "%" + titulo + "%");
-            ps.setInt(2,  anioLanzamiento );
-            ps.setInt(3,  pegi );
-
-            logger.info("Query a ejecutar: {}", ps);
+            int numeroParametro = 1;
+            if (titulo != null && !titulo.trim().isEmpty()) {
+                ps.setString(numeroParametro, "%" + titulo + "%");
+                numeroParametro++;
+            }
+            if (idDesarrolladora != null) {
+                ps.setInt(numeroParametro, idDesarrolladora);
+                numeroParametro++;
+            }
+            if (anioDesde != null) {
+                ps.setInt(numeroParametro, anioDesde);
+                numeroParametro++;
+            }
+            if (pegiMaximo != null) {
+                ps.setInt(numeroParametro, pegiMaximo);
+            }
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                listaVideojuegos.add(mapearVideojuegos(rs));
+                listaVideojuegos.add(new VideojuegoListadoDTO(
+                        mapearVideojuego(rs),
+                        rs.getString("desarrolladora"),
+                        rs.getInt("copias_totales"),
+                        rs.getInt("copias_disponibles")
+                ));
             }
+            rs.close();
+            ps.close();
             connection.close();
         } catch (SQLException e) {
-            logger.error("Error al buscar alumnos", e);
+            logger.error("Error al buscar videojuegos", e);
             cerrarConexion(connection);
         }
         return listaVideojuegos;
@@ -55,6 +92,51 @@ public class VideojuegosRepository {
         );
     }
 
+    public VideojuegosDTO buscarVideojuegoPorId(int idVideojuego) {
+        String sql = "SELECT id, titulo, anio_lanzamiento, pegi, id_desarrolladora "
+                + "FROM videojuegos WHERE id = ?";
+        VideojuegosDTO videojuego = null;
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, idVideojuego);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                videojuego = mapearVideojuego(rs);
+            }
+            rs.close();
+            ps.close();
+            connection.close();
+        } catch (SQLException e) {
+            logger.error("Error al buscar videojuego por ID", e);
+            cerrarConexion(connection);
+        }
+        return videojuego;
+    }
+
+
+    public int contarVideojuegos() {
+        String sql = "SELECT COUNT(*) AS total FROM videojuegos";
+        int total = 0;
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                total = rs.getInt("total");
+            }
+            rs.close();
+            ps.close();
+            connection.close();
+        } catch (SQLException e) {
+            logger.error("Error al contar videojuegos", e);
+            cerrarConexion(connection);
+        }
+        return total;
+    }
+
     private void cerrarConexion(Connection connection) {
         if (connection != null) {
             try {
@@ -63,5 +145,26 @@ public class VideojuegosRepository {
                 throw new RuntimeException(ex);
             }
         }
+    }
+    public int insertarVideojuego(VideojuegosDTO videojuego) {
+        String sql = "INSERT INTO videojuegos (titulo, anio_lanzamiento, pegi, id_desarrolladora) "
+                + "VALUES (?, ?, ?, ?)";
+        int filasAfectadas = 0;
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setString(1, videojuego.getTitulo());
+            ps.setInt(2, videojuego.getAnioLanzamiento());
+            ps.setInt(3, videojuego.getPegi());
+            ps.setInt(4, videojuego.getIdDesarrolladora());
+            filasAfectadas = ps.executeUpdate();
+            ps.close();
+            connection.close();
+        } catch (SQLException e) {
+            logger.error("Error al insertar videojuego", e);
+            cerrarConexion(connection);
+        }
+        return filasAfectadas;
     }
 }
